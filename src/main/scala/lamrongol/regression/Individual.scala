@@ -1,5 +1,6 @@
 package lamrongol.regression
 
+import lamrongol.regression.Gene.Exp
 import org.apache.commons.lang3.SerializationUtils
 
 import scala.util.Random
@@ -10,16 +11,10 @@ import scala.util.Random
 class Individual(val unitNum: Int, isPlus: Array[Boolean] = null) extends Serializable {
   var evaluation: Double = 0.0
   var R = 0.0
-  var genes = new Array[GeneUnit.Value](unitNum)
+  var genes = new Array[Gene](unitNum)
   var coe: Array[Double] = null
 
   val random = new Random()
-
-  def randomInitialize() = {
-    for (i <- 0 until unitNum) {
-      genes(i) = if (isPlus != null && isPlus(i)) GeneManager.getRandomGeneUnit() else GeneManager.getRandomGeneUnitAllowMinus()
-    }
-  }
 
   def combine(father: Individual): (Individual, Individual) = {
     val startIdx = random.nextInt(unitNum)
@@ -31,20 +26,18 @@ class Individual(val unitNum: Int, isPlus: Array[Boolean] = null) extends Serial
 
     var i = startIdx
     while (i != endIdx) {
-      if (isPlus != null && isPlus(i) == false && !allowMinus(father.genes(i))) {} else child1.genes(i) = father.genes(i)
-      if (isPlus != null && isPlus(i) == false && !allowMinus(this.genes(i))) {} else child2.genes(i) = this.genes(i)
+      if (child1.genes(i).code == child2.genes(i).code) {
+        val (newGene1, newGene2) = GeneManager.crossParameter(child1.genes(i), child2.genes(i))
+        child1.genes(i) = newGene1
+        child2.genes(i) = newGene2
+      } else {
+        child1.genes(i) = father.genes(i) //if (isPlus == null || isPlus(i) || GeneManager.allowMinus(father.genes(i)))
+        child2.genes(i) = this.genes(i) //if (isPlus == null || isPlus(i) || GeneManager.allowMinus(this.genes(i)))
+      }
 
       i = (i + 1) % unitNum
     }
     (child1, child2)
   }
-
-  def mutate() = {
-    val mutationIdx = random.nextInt(unitNum)
-    genes(mutationIdx) = if (isPlus != null && isPlus(mutationIdx)) GeneManager.getRandomGeneUnit() else GeneManager.getRandomGeneUnitAllowMinus()
-  }
-
-  def allowMinus(geneUnit: GeneUnit.Value): Boolean = geneUnit.id < GeneUnit.ALLOW_MINUS_MAX_INDEX
-
 }
 

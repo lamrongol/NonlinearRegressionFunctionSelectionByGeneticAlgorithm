@@ -3,6 +3,10 @@ package lamrongol.regression
 import java.io.PrintWriter
 
 import com.github.tototoshi.csv.{CSVReader, DefaultCSVFormat}
+import lamrongol.regression.Gene.Unused
+import org.apache.commons.io.FilenameUtils
+import org.apache.commons.math3.linear.SingularMatrixException
+import org.apache.commons.math3.stat.StatUtils
 import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression
 
 import scala.collection.mutable
@@ -26,9 +30,12 @@ class RegressionParameterSelectionByGeneticAlgorithm(tsvFile: String, criterionC
                                                      val MIN_LOOP_COUNT: Int = 10,
                                                      val STOP_DIFF_RATE: Double = 0.000001
                                                     ) {
+  println(tsvFile)
+  if (recordFile == null) recordFile = FilenameUtils.getBaseName(tsvFile + "_result.tsv")
   val random = new Random()
   val profitList = scala.collection.mutable.ArrayBuffer.empty[Double]
   val parametersList = scala.collection.mutable.ArrayBuffer.empty[mutable.Buffer[Double]]
+  val valuesList = scala.collection.mutable.ArrayBuffer.empty[mutable.Buffer[Double]]
 
   //val file = "D:\\FxData\\USD_JPY\\features.tsv"
 
@@ -53,17 +60,36 @@ class RegressionParameterSelectionByGeneticAlgorithm(tsvFile: String, criterionC
     val allParameters = nextLine.slice(parameterColumnStart, endIdx).map(_.toDouble).toBuffer
     //allParameters(0) = Math.exp(allParameters(0))
     parametersList += allParameters
+    if (count == 0) {
+      for (i <- 0 until allParameters.length) {
+        valuesList += scala.collection.mutable.ArrayBuffer.empty[Double]
+      }
+    }
+
+    for (i <- 0 until allParameters.length) {
+      valuesList(i) += Math.abs(allParameters(i))
+    }
 
     count += 1
   }
   val profits = profitList.toArray
   var parameterCount = parametersList(0).size
+  if (parameterCount != isPlus.length) throw new Exception("isPlus length is differ from parameter count")
+
+  val medians = new Array[Double](parameterCount)
+  for (i <- 0 until parameterCount) {
+    medians(i) = StatUtils.percentile(valuesList(i).toArray, 0.50)
+  }
+  val scaleFactors = medians.map(1.0 / _)
 
   def execute(): Double = {
     var individuals = new Array[Individual](INDIVIDUAL_NUM)
     for (i <- 0 until INDIVIDUAL_NUM) {
       individuals(i) = new Individual(parameterCount, isPlus)
-      individuals(i).randomInitialize()
+      for (j <- 0 until parameterCount) {
+        individuals(i) genes (j) = if (isPlus != null && isPlus(j)) GeneManager.getRandomGeneUnit(scaleFactors(j))
+        else GeneManager.getRandomGeneUnitAllowMinus(scaleFactors(j))
+      }
     }
 
     var loopCount = 0
@@ -100,7 +126,11 @@ class RegressionParameterSelectionByGeneticAlgorithm(tsvFile: String, criterionC
         if (nextIndividuals.size < INDIVIDUAL_NUM) nextIndividuals += child2
       }
       for (i <- 1 until INDIVIDUAL_NUM) {
-        if (random.nextDouble() < MUTATION_RATE) nextIndividuals(i).mutate
+        if (random.nextDouble() < MUTATION_RATE) {
+          val mutationIdx = random.nextInt(parameterCount)
+          nextIndividuals(i).genes(mutationIdx) = if (isPlus != null && isPlus(mutationIdx)) GeneManager.getRandomGeneUnit(scaleFactors(mutationIdx))
+          else GeneManager.getRandomGeneUnitAllowMinus(scaleFactors(mutationIdx))
+        }
       }
 
       for (i <- 0 until INDIVIDUAL_NUM) {
@@ -110,8 +140,7 @@ class RegressionParameterSelectionByGeneticAlgorithm(tsvFile: String, criterionC
       val bestEvaluation = nextIndividuals(0).evaluation
 
       val best = nextIndividuals(0)
-      println(best.genes.mkString("\t"))
-      println(best.coe.mkString("\t"))
+      print(best)
       println("AIC=" + bestEvaluation)
       println("R=" + nextIndividuals(0).R)
 
@@ -125,8 +154,6 @@ class RegressionParameterSelectionByGeneticAlgorithm(tsvFile: String, criterionC
     }
 
     val best = individuals(0)
-    println(best.genes.mkString("\t"))
-    println(best.coe.mkString("\t"))
     println("#AIC=" + best.evaluation)
     println("#R=" + best.R)
     println(recordFile)
@@ -137,14 +164,27 @@ class RegressionParameterSelectionByGeneticAlgorithm(tsvFile: String, criterionC
     pw.println("[Intercept]\t" + best.coe(0))
     var idx = 1
     for (i <- 0 until best.unitNum) {
-      if (best.genes(i) == GeneUnit.None) pw.println("None" + "\t" + "None")
+      if (best.genes(i) == Unused) pw.println("Unused")
       else {
-        pw.println(best.genes(i) + "\t" + best.coe(idx))
+        pw.println(best.coe(idx) + "\t" + best.genes(i))
         idx += 1
       }
     }
+
     pw.close()
     return best.R
+  }
+
+  def print(ind: Individual): Unit = {
+    println("[Intercept]\t" + ind.coe(0))
+    var idx = 1
+    for (i <- 0 until ind.unitNum) {
+      if (ind.genes(i) == Unused) println("Unused")
+      else {
+        println(ind.coe(idx) + "\t" + ind.genes(i))
+        idx += 1
+      }
+    }
   }
 
 
@@ -158,14 +198,14 @@ class RegressionParameterSelectionByGeneticAlgorithm(tsvFile: String, criterionC
   }
 
   def calcEvaluation(individual: Individual): Unit = {
-    val parameterCount = individual.genes.count(_ != GeneUnit.None)
+    val parameterCount = individual.genes.count(_ != Unused)
     val dataCount = parametersList.size
     val parametersArray = Array.ofDim[Double](dataCount, parameterCount)
     for (i <- 0 until parametersList.size) {
       val tmpList = new ArrayBuffer[Double]
       for (j <- 0 until individual.genes.length) {
-        if (individual.genes(j) != GeneUnit.None) {
-          tmpList += GeneManager.apply(parametersList(i)(j), individual.genes(j))
+        if (individual.genes(j) != Unused) {
+          tmpList += individual.genes(j).calc(parametersList(i)(j))
         }
       }
       parametersArray(i) = tmpList.toArray
@@ -173,10 +213,22 @@ class RegressionParameterSelectionByGeneticAlgorithm(tsvFile: String, criterionC
 
     val reg = new OLSMultipleLinearRegression()
     reg.newSampleData(profits, parametersArray)
+    //    try {
     val coe = reg.estimateRegressionParameters()
+    individual.coe = coe
+    /*
+        } catch {
+          case e: SingularMatrixException => {
+            if (individual.genes.count(_ == Unused) == 0) {
+              println("Your data is singular")
+            } else {
+              individual.evaluation = Double.MaxValue
+              return
+            }
+    }
+    */
     val aic = dataCount * Math.log(reg.calculateResidualSumOfSquares() / dataCount) + 2 * (parameterCount + 1)
 
-    individual.coe = coe
     individual.R = reg.calculateAdjustedRSquared()
     /*
         val r = reg.calculateAdjustedRSquared()
@@ -189,40 +241,6 @@ class RegressionParameterSelectionByGeneticAlgorithm(tsvFile: String, criterionC
       case Evaluation.Aic => aic
     }
   }
-
-  /*
-
-    def cleanLowContributionRateParameters(individual: Individual): Individual = {
-      val newIndividual = SerializationUtils.clone(individual)
-      val parameterCount = newIndividual.genes.count(_ != GeneUnit.None)
-      val dataCount = parametersList.size
-      val contributionRates = new Array[Double](newIndividual.genes.length)
-
-      for (i <- 0 until parametersList.size) {
-        val contributions = new Array[Double](newIndividual.genes.length)
-        var idx = 0
-        var sum = newIndividual.coe(idx)
-        for (j <- 0 until newIndividual.genes.length if (newIndividual.genes(j) != GeneUnit.None)) {
-          idx += 1
-          contributions(j) = GeneManager.apply(parametersList(i)(j), newIndividual.genes(j))
-          contributions(j) *= newIndividual.coe(idx)
-          sum += Math.abs(contributions(j))
-        }
-        for (j <- 0 until newIndividual.genes.length if (newIndividual.genes(j) != GeneUnit.None)) {
-          contributionRates(j) += Math.abs(contributions(j)) / sum
-        }
-      }
-
-      print("ContiributionRates: ")
-      for (j <- 0 until newIndividual.genes.length if (newIndividual.genes(j) != GeneUnit.None)) {
-        contributionRates(j) /= dataCount
-        print(contributionRates(j) + "\t")
-        if (contributionRates(j) < 0.05 / parameterCount) newIndividual.genes(j) = GeneUnit.None
-      }
-      println()
-      newIndividual
-    }
-  */
 
 }
 
