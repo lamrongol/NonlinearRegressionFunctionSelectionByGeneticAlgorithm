@@ -31,7 +31,7 @@ class RegressionParameterSelectionByGeneticAlgorithm(tsvFile: String, criterionC
                                                      val STOP_DIFF_RATE: Double = 0.000001
                                                     ) {
   println(tsvFile)
-  if (recordFile == null) recordFile = FilenameUtils.getBaseName(tsvFile + "_result.tsv")
+  if (recordFile == null) recordFile = FilenameUtils.getBaseName(tsvFile) + "_result.tsv"
   val random = new Random()
   val profitList = scala.collection.mutable.ArrayBuffer.empty[Double]
   val parametersList = scala.collection.mutable.ArrayBuffer.empty[mutable.Buffer[Double]]
