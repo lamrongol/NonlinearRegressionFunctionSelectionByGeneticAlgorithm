@@ -28,7 +28,8 @@ class RegressionParameterSelectionByGeneticAlgorithm(tsvFile: String, criterionC
 
                                                      val MAX_LOOP_COUNT: Int = 1000,
                                                      val MIN_LOOP_COUNT: Int = 10,
-                                                     val STOP_DIFF_RATE: Double = 0.000001
+                                                     val STOP_DIFF_RATE: Double = 0.000001,
+                                                     val checkMode: Boolean = false
                                                     ) {
   println(tsvFile)
   if (recordFile == null) recordFile = FilenameUtils.getBaseName(tsvFile) + "_result.tsv"
@@ -172,6 +173,24 @@ class RegressionParameterSelectionByGeneticAlgorithm(tsvFile: String, criterionC
     }
 
     pw.close()
+
+    if (checkMode) {
+      val calculator = new RegressionCalculator(recordFile)
+      var errorRateList = scala.collection.mutable.ArrayBuffer.empty[Double]
+      println("actual\tcalculated\terrorRate")
+      for (i <- 0 until parametersList.size) {
+        val parameters = parametersList(i)
+
+        val actual = profits(i)
+        val calculated = calculator.calculate(parameters.toList)
+        val errorRate = Math.abs(actual - calculated) / (Math.abs(actual) + Double.MinPositiveValue) * 100 //not to be infinity
+        errorRateList += errorRate
+
+        println(s"$actual\t$calculated\t$errorRate")
+      }
+      println("Error rate median = " + StatUtils.percentile(errorRateList.toArray, 50) + "%")
+    }
+
     return best.R
   }
 
