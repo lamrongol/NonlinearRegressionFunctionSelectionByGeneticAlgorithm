@@ -6,8 +6,8 @@ How to use: see src/main/scala/example package
 
 To import this project, you need to clone and write following in build.sbt
 
-  lazy val spamFilter = RootProject(file("C:\\workspaces\\NonlinearRegressionFunctionSelectionByGeneticAlgorithm"))
-  val main = Project(id = "YOUR_PROJECT", base =file(".")).dependsOn(spamFilter)
+    lazy val spamFilter = RootProject(file("C:\\workspaces\\NonlinearRegressionFunctionSelectionByGeneticAlgorithm"))
+    val main = Project(id = "YOUR_PROJECT", base =file(".")).dependsOn(spamFilter)
 
 You need to change address you've cloned and YOUR_PROJECT to your project name in build.sbt
 
@@ -20,7 +20,7 @@ You need to change address you've cloned and YOUR_PROJECT to your project name i
 
 このプロジェクトをインポートする場合クローンしてbuild.sbtに以下のように記述します。
 
-  lazy val spamFilter = RootProject(file("C:\\workspaces\\NonlinearRegressionFunctionSelectionByGeneticAlgorithm"))
-  val main = Project(id = "YOUR_PROJECT", base =file(".")).dependsOn(spamFilter)
+    lazy val spamFilter = RootProject(file("C:\\workspaces\\NonlinearRegressionFunctionSelectionByGeneticAlgorithm"))
+    val main = Project(id = "YOUR_PROJECT", base =file(".")).dependsOn(spamFilter)
 
 クローンした場所は自分の環境に合わせ、YOUR_PROJECTの部分は自分のプロジェクトのsbtファイルに記載されているnameに変えてください。
