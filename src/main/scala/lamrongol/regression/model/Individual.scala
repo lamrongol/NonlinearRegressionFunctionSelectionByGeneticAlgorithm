@@ -1,6 +1,6 @@
-package lamrongol.regression
+package lamrongol.regression.model
 
-import lamrongol.regression.Gene.Exp
+import lamrongol.regression.model.Gene.Unused
 import org.apache.commons.lang3.SerializationUtils
 
 import scala.util.Random
@@ -38,6 +38,29 @@ class Individual(val unitNum: Int, isPlus: Array[Boolean] = null) extends Serial
       i = (i + 1) % unitNum
     }
     (child1, child2)
+  }
+
+  override def toString = {
+    if (coe == null) {
+      genes.mkString("\t")
+    } else {
+      val sb = new StringBuffer()
+      val crlf = System.getProperty("line.separator");
+      sb.append("#Coefficient\tFunction\tScaling Factor(if exists)").append(crlf)
+      sb.append("[Intercept]\t" + coe(0)).append(crlf)
+      var idx = 1
+      for (i <- 0 until unitNum) {
+        if (genes(i) == Unused) sb.append("Unused").append(crlf)
+        else {
+          sb.append(coe(idx) + "\t" + genes(i)).append(crlf)
+          idx += 1
+        }
+      }
+      sb.append("#AIC=" + evaluation).append(crlf)
+      sb.append("#|R|=" + R)
+
+      sb.toString
+    }
   }
 }
 
