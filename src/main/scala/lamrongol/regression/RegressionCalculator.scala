@@ -2,7 +2,8 @@ package lamrongol.regression
 
 import java.io.File
 
-import lamrongol.regression.Gene.Unused
+import lamrongol.regression.model.{GeneManager, Gene}
+import Gene.Unused
 import org.apache.commons.io.FileUtils
 
 import scala.collection.mutable.ArrayBuffer
@@ -35,7 +36,7 @@ class RegressionCalculator(tsvFile: String) {
   for (line <- lines) {
     if (line.startsWith("#")) {
       val tmp = line.split("=")
-      if (tmp(0) == "#R") r = tmp(1).toDouble
+      if (tmp(0) == "#|R|") r = tmp(1).toDouble
     } else {
       val tmp = line.split("\t")
       if (tmp(0) == "[Intercept]") {
