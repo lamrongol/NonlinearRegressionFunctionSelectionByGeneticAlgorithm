@@ -1,4 +1,4 @@
-name := "RegressionParameterSelectionByGeneticAlgorithm"
+name := "NonlinearRegressionFunctionSelectionByGeneticAlgorithm"
 
 version := "1.0"
 
