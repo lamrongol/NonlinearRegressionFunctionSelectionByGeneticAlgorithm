@@ -17,6 +17,9 @@ You need to change address you've cloned and YOUR_PROJECT to your project name i
 
 使い方はsrc/main/scala/example パッケージをごらんください
 
+原理の詳しい解説は以下のページをごらんください
+遺伝的アルゴリズムによる非線形重回帰分析の変数＆関数選択プログラム
+http://qiita.com/lamrongol/items/c865b6c10e9b91fbccba
 
 このプロジェクトをインポートする場合クローンしてbuild.sbtに以下のように記述します。
 
@@ -24,3 +27,4 @@ lazy val spamFilter = RootProject(file("C:\\workspaces\\NonlinearRegressionFunct
 val main = Project(id = "YOUR_PROJECT", base =file(".")).dependsOn(spamFilter)
 
 クローンした場所は自分の環境に合わせ、YOUR_PROJECTの部分は自分のプロジェクトのsbtファイルに記載されているnameに変えてください。
+
