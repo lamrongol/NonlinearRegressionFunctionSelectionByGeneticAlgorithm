@@ -1,6 +1,6 @@
-package lamrongol.regression
+package lamrongol.regression.model
 
-import lamrongol.regression.Gene._
+import lamrongol.regression.model.Gene._
 
 import scala.util.Random
 
@@ -11,6 +11,8 @@ import scala.util.Random
 
 sealed abstract class Gene(val code: Int) extends Serializable {
   def calc(x: Double): Double
+
+  def degreeOfFreedom: Int
 }
 
 object Gene {
@@ -20,22 +22,32 @@ object Gene {
   //Followings allow both plus and minus
   case object Unused extends Gene(0) {
     def calc(x: Double) = Double.NaN
+
+    def degreeOfFreedom = 0
   }
 
-  case object Identity extends Gene(1) {
+  case object Linear extends Gene(1) {
     def calc(x: Double) = x
+
+    def degreeOfFreedom = 1
   }
 
   case object Squared extends Gene(2) {
     def calc(x: Double) = x * x
+
+    def degreeOfFreedom = 1
   }
 
   case object Cubed extends Gene(3) {
     def calc(x: Double) = x * x * x
+
+    def degreeOfFreedom = 1
   }
 
   case class Exp(a: Double) extends Gene(4) {
     def calc(x: Double) = Math.exp(a * x)
+
+    def degreeOfFreedom = 2
 
     override def toString = "Exp\t" + a
   }
@@ -43,11 +55,15 @@ object Gene {
   case class ExpMinus(a: Double) extends Gene(5) {
     def calc(x: Double) = Math.exp(-a * x)
 
+    def degreeOfFreedom = 2
+
     override def toString = "ExpMinus\t" + a
   }
 
   case class ExpMinusSquared(a: Double) extends Gene(6) {
     def calc(x: Double) = Math.exp(-a * x * x)
+
+    def degreeOfFreedom = 2
 
     override def toString = "ExpMinusSquared\t" + a
   }
@@ -55,19 +71,27 @@ object Gene {
   //Followings don't allow zero
   case object Inverse extends Gene(7) {
     def calc(x: Double) = 1.0 / x
+
+    def degreeOfFreedom = 1
   }
 
   //Followings allow only plus
   case object Sqrt extends Gene(8) {
     def calc(x: Double) = Math.sqrt(x)
+
+    def degreeOfFreedom = 1
   }
 
   case object Log extends Gene(9) {
     def calc(x: Double) = Math.log(x)
+
+    def degreeOfFreedom = 1
   }
 
   case class Log1plus(a: Double) extends Gene(10) {
     def calc(x: Double) = Math.log(1 + a * x)
+
+    def degreeOfFreedom = 2
 
     override def toString = "Log1plus\t" + a
   }
@@ -78,7 +102,7 @@ object GeneManager {
   def getRandomGeneUnit(scaleFactor: Double, caseCount: Int = Gene.COUNT): Gene = {
     Random.nextInt(caseCount) match {
       case 0 => Unused
-      case 1 => Identity
+      case 1 => Linear
       case 2 => Squared
       case 3 => Cubed
       case 4 => Exp(scaleFactor / 10 + Random.nextDouble() * 9.9 * scaleFactor)
@@ -140,7 +164,7 @@ object GeneManager {
   def withName(geneName: String, scaleFactor: String = null): Gene = {
     geneName match {
       case "Unused" => Unused
-      case "Identity" => Identity
+      case "Linear" => Linear
       case "Squared" => Squared
       case "Cubed" => Cubed
       case "Exp" => Exp(scaleFactor.toDouble)
