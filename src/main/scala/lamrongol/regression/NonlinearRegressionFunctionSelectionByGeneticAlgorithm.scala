@@ -3,7 +3,8 @@ package lamrongol.regression
 import java.io.PrintWriter
 
 import com.github.tototoshi.csv.{CSVReader, DefaultCSVFormat}
-import lamrongol.regression.Gene.Unused
+import lamrongol.regression.model.{Individual, GeneManager, Evaluation, Gene}
+import Gene.Unused
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.math3.linear.SingularMatrixException
 import org.apache.commons.math3.stat.StatUtils
@@ -17,20 +18,20 @@ import scala.util.Random
   * Created by admin on 2015/11/15.
   */
 
-class RegressionParameterSelectionByGeneticAlgorithm(tsvFile: String, criterionColumn: Int = 0, parameterColumnStart: Int = 1,
-                                                     parameterColumnEnd: Int = -1,
-                                                     evaluationWay: Evaluation.Value = Evaluation.Aic, isPlus: Array[Boolean] = null,
-                                                     val recordFile: String = "result.tsv",
+class NonlinearRegressionFunctionSelectionByGeneticAlgorithm(tsvFile: String, criterionColumn: Int = 0, parameterColumnStart: Int = 1,
+                                                             parameterColumnEnd: Int = -1,
+                                                             evaluationWay: Evaluation.Value = Evaluation.Aic, isPlus: Array[Boolean] = null,
+                                                             var recordFile: String = null,
 
-                                                     val INDIVIDUAL_NUM: Int = 500,
-                                                     val TOP_SELECTION_NUM: Int = 30,
-                                                     val MUTATION_RATE: Double = 0.03,
+                                                             val INDIVIDUAL_NUM: Int = 500,
+                                                             val TOP_SELECTION_NUM: Int = 30,
+                                                             val MUTATION_RATE: Double = 0.03,
 
-                                                     val MAX_LOOP_COUNT: Int = 1000,
-                                                     val MIN_LOOP_COUNT: Int = 10,
-                                                     val STOP_DIFF_RATE: Double = 0.000001,
-                                                     val checkMode: Boolean = false
-                                                    ) {
+                                                             val MAX_LOOP_COUNT: Int = 1000,
+                                                             val MIN_LOOP_COUNT: Int = 10,
+                                                             val STOP_DIFF_RATE: Double = 0.000001,
+                                                             val checkMode: Boolean = false
+                                                            ) {
   println(tsvFile)
   if (recordFile == null) recordFile = FilenameUtils.getBaseName(tsvFile) + "_result.tsv"
   val random = new Random()
@@ -141,9 +142,8 @@ class RegressionParameterSelectionByGeneticAlgorithm(tsvFile: String, criterionC
       val bestEvaluation = nextIndividuals(0).evaluation
 
       val best = nextIndividuals(0)
-      print(best)
-      println("AIC=" + bestEvaluation)
-      println("R=" + nextIndividuals(0).R)
+      println()
+      println(best)
 
       //println(preBestEvaluation, bestEvaluation, Math.abs(preBestEvaluation - bestEvaluation), Math.abs(preBestEvaluation - bestEvaluation) / preBestEvaluation)
       evaluationDiffRate = Math.abs(preBestEvaluation - bestEvaluation) / preBestEvaluation
@@ -155,23 +155,9 @@ class RegressionParameterSelectionByGeneticAlgorithm(tsvFile: String, criterionC
     }
 
     val best = individuals(0)
-    println("#AIC=" + best.evaluation)
-    println("#R=" + best.R)
-    println(recordFile)
+
     val pw = new PrintWriter(recordFile)
-
-    pw.println("#AIC=" + best.evaluation)
-    pw.println("#R=" + best.R)
-    pw.println("[Intercept]\t" + best.coe(0))
-    var idx = 1
-    for (i <- 0 until best.unitNum) {
-      if (best.genes(i) == Unused) pw.println("Unused")
-      else {
-        pw.println(best.coe(idx) + "\t" + best.genes(i))
-        idx += 1
-      }
-    }
-
+    pw.println(best)
     pw.close()
 
     if (checkMode) {
@@ -191,21 +177,11 @@ class RegressionParameterSelectionByGeneticAlgorithm(tsvFile: String, criterionC
       println("Error rate median = " + StatUtils.percentile(errorRateList.toArray, 50) + "%")
     }
 
+    println()
+    println("output:" + recordFile)
+
     return best.R
   }
-
-  def print(ind: Individual): Unit = {
-    println("[Intercept]\t" + ind.coe(0))
-    var idx = 1
-    for (i <- 0 until ind.unitNum) {
-      if (ind.genes(i) == Unused) println("Unused")
-      else {
-        println(ind.coe(idx) + "\t" + ind.genes(i))
-        idx += 1
-      }
-    }
-  }
-
 
   /**
     * nまでの整数で小さい数ほど出現しやすい乱数
@@ -246,9 +222,11 @@ class RegressionParameterSelectionByGeneticAlgorithm(tsvFile: String, criterionC
             }
     }
     */
-    val aic = dataCount * Math.log(reg.calculateResidualSumOfSquares() / dataCount) + 2 * (parameterCount + 1)
 
-    individual.R = reg.calculateAdjustedRSquared()
+    val degreeOfFreedomSum = individual.genes.map(_.degreeOfFreedom).sum
+    val aic = dataCount * Math.log(reg.calculateResidualSumOfSquares() / dataCount) + 2 * (degreeOfFreedomSum + 1)
+
+    individual.R = Math.sqrt(reg.calculateAdjustedRSquared())
     /*
         val r = reg.calculateAdjustedRSquared()
         println("決定係数=" + r)
