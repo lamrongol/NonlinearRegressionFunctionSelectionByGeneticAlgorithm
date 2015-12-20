@@ -37,7 +37,7 @@ class NonlinearRegressionFunctionSelectionByGeneticAlgorithm(tsvFile: String, cr
   val random = new Random()
   val dependentList = scala.collection.mutable.ArrayBuffer.empty[Double]
   val parametersList = scala.collection.mutable.ArrayBuffer.empty[mutable.Buffer[Double]]
-  val valuesList = scala.collection.mutable.ArrayBuffer.empty[mutable.Buffer[Double]]
+  val absValuesList = scala.collection.mutable.ArrayBuffer.empty[mutable.Buffer[Double]]
 
   //val file = "D:\\FxData\\USD_JPY\\features.tsv"
 
@@ -62,12 +62,12 @@ class NonlinearRegressionFunctionSelectionByGeneticAlgorithm(tsvFile: String, cr
     parametersList += allParameters
     if (count == 0) {
       for (i <- 0 until allParameters.length) {
-        valuesList += scala.collection.mutable.ArrayBuffer.empty[Double]
+        absValuesList += scala.collection.mutable.ArrayBuffer.empty[Double]
       }
     }
 
     for (i <- 0 until allParameters.length) {
-      valuesList(i) += Math.abs(allParameters(i))
+      absValuesList(i) += Math.abs(allParameters(i))
     }
 
     count += 1
