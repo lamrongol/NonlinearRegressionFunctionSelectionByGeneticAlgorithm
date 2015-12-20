@@ -78,7 +78,7 @@ class NonlinearRegressionFunctionSelectionByGeneticAlgorithm(tsvFile: String, cr
 
   val medians = new Array[Double](parameterCount)
   for (i <- 0 until parameterCount) {
-    medians(i) = StatUtils.percentile(valuesList(i).toArray, 50)
+    medians(i) = StatUtils.percentile(absValuesList(i).toArray, 50)
   }
   //val yMedians = StatUtils.percentile(dependents.map(Math.abs(_)), 50)
 
