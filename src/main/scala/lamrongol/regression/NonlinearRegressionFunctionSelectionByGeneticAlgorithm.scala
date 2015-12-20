@@ -35,7 +35,7 @@ class NonlinearRegressionFunctionSelectionByGeneticAlgorithm(tsvFile: String, cr
   println(tsvFile)
   if (recordFile == null) recordFile = FilenameUtils.getBaseName(tsvFile) + "_result.tsv"
   val random = new Random()
-  val profitList = scala.collection.mutable.ArrayBuffer.empty[Double]
+  val dependentList = scala.collection.mutable.ArrayBuffer.empty[Double]
   val parametersList = scala.collection.mutable.ArrayBuffer.empty[mutable.Buffer[Double]]
   val valuesList = scala.collection.mutable.ArrayBuffer.empty[mutable.Buffer[Double]]
 
@@ -52,12 +52,10 @@ class NonlinearRegressionFunctionSelectionByGeneticAlgorithm(tsvFile: String, cr
   val it = reader.iterator
   var count = 0
   while (it.hasNext) {
-    //if (profit > 0) profit = Math.log(1 + profit) else -Math.log(1 - profit)
-    //profitList += (if (nextLine(0).toDouble > 0) 100 else -100)
     val nextLine = it.next
     //if (nextLine(1) == "BUY") {
-    var profit = nextLine(0).toDouble
-    profitList += profit
+    var dependent = nextLine(0).toDouble
+    dependentList += dependent
     val endIdx = if (parameterColumnEnd == -1) nextLine.size else parameterColumnEnd
     val allParameters = nextLine.slice(parameterColumnStart, endIdx).map(_.toDouble).toBuffer
     //allParameters(0) = Math.exp(allParameters(0))
@@ -74,14 +72,16 @@ class NonlinearRegressionFunctionSelectionByGeneticAlgorithm(tsvFile: String, cr
 
     count += 1
   }
-  val profits = profitList.toArray
+  val dependents = dependentList.toArray
   var parameterCount = parametersList(0).size
   if (parameterCount != isPlus.length) throw new Exception("isPlus length is differ from parameter count")
 
   val medians = new Array[Double](parameterCount)
   for (i <- 0 until parameterCount) {
-    medians(i) = StatUtils.percentile(valuesList(i).toArray, 0.50)
+    medians(i) = StatUtils.percentile(valuesList(i).toArray, 50)
   }
+  //val yMedians = StatUtils.percentile(dependents.map(Math.abs(_)), 50)
+
   val scaleFactors = medians.map(1.0 / _)
 
   def execute(): Double = {
@@ -167,7 +167,7 @@ class NonlinearRegressionFunctionSelectionByGeneticAlgorithm(tsvFile: String, cr
       for (i <- 0 until parametersList.size) {
         val parameters = parametersList(i)
 
-        val actual = profits(i)
+        val actual = dependents(i)
         val calculated = calculator.calculate(parameters.toList)
         val errorRate = Math.abs(actual - calculated) / (Math.abs(actual) + Double.MinPositiveValue) * 100 //not to be infinity
         errorRateList += errorRate
@@ -207,7 +207,7 @@ class NonlinearRegressionFunctionSelectionByGeneticAlgorithm(tsvFile: String, cr
     }
 
     val reg = new OLSMultipleLinearRegression()
-    reg.newSampleData(profits, parametersArray)
+    reg.newSampleData(dependents, parametersArray)
     //    try {
     val coe = reg.estimateRegressionParameters()
     individual.coe = coe
