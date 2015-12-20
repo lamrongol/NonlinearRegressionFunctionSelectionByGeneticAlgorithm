@@ -17,7 +17,7 @@ object SampleDataGenerator extends App {
     val x2 = 50 + Random.nextDouble() * 6000
     val x3 = 0.10 + Random.nextDouble() / 10
     val x4 = (Random.nextDouble() - 0.5) * 124
-    val x5 = Random.nextDouble() * 800000 + 2000
+    val x5 = Random.nextDouble() * 80000000 + 1000
     val x6 = (Random.nextDouble() * 9 + 1) / 8000
     val noise = Random.nextGaussian() * 1000
 
