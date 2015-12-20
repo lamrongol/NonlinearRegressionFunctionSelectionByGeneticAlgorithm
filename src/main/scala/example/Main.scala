@@ -7,6 +7,7 @@ import lamrongol.regression.{NonlinearRegressionFunctionSelectionByGeneticAlgori
   */
 object Main extends App {
   val outputFile = "result.tsv"
+  //tsv file: first column is dependent variable and others are independent variables, see also SampleDataGenerator
   new NonlinearRegressionFunctionSelectionByGeneticAlgorithm("sampleData.tsv",
     //if you know each parameter is always plus (or not), this program explores functions which allows only plus value (such as sqrt, log), too
     isPlus = Array(true, true, true, false, true, true),
