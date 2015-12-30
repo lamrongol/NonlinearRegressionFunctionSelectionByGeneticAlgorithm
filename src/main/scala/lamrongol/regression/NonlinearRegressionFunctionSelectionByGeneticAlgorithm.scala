@@ -30,13 +30,14 @@ class NonlinearRegressionFunctionSelectionByGeneticAlgorithm(tsvFile: String, cr
                                                              val MAX_LOOP_COUNT: Int = 1000,
                                                              val MIN_LOOP_COUNT: Int = 10,
                                                              val STOP_DIFF_RATE: Double = 0.000001,
+                                                             val MAX_DATA_NUM: Int = -1,
                                                              val checkMode: Boolean = false
                                                             ) {
   println(tsvFile)
   if (recordFile == null) recordFile = FilenameUtils.getBaseName(tsvFile) + "_result.tsv"
   val random = new Random()
-  val dependentList = scala.collection.mutable.ArrayBuffer.empty[Double]
-  val parametersList = scala.collection.mutable.ArrayBuffer.empty[mutable.Buffer[Double]]
+	var dependentList = scala.collection.mutable.ArrayBuffer.empty[Double]
+	var parametersList = scala.collection.mutable.ArrayBuffer.empty[mutable.Buffer[Double]]
   val absValuesList = scala.collection.mutable.ArrayBuffer.empty[mutable.Buffer[Double]]
 
   //val file = "D:\\FxData\\USD_JPY\\features.tsv"
@@ -72,6 +73,15 @@ class NonlinearRegressionFunctionSelectionByGeneticAlgorithm(tsvFile: String, cr
 
     count += 1
   }
+	if (MAX_DATA_NUM > 0) {
+		val startIdx = parametersList.size - MAX_DATA_NUM
+		if (startIdx > 0) {
+			val endIdx = parametersList.size
+			parametersList = parametersList.slice(startIdx, endIdx)
+			dependentList = dependentList.slice(startIdx, endIdx)
+		}
+	}
+
   val dependents = dependentList.toArray
   var parameterCount = parametersList(0).size
   if (parameterCount != isPlus.length) throw new Exception("isPlus length is differ from parameter count")
