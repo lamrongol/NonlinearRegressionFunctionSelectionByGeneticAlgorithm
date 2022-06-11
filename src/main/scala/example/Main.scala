@@ -21,7 +21,7 @@ object Main extends App {
   //calculate for new data
   val calculator = new RegressionCalculator(outputFile)
   println(calculator.calculate(List(500, 600, 0.12, -18, 30000, 0.00075)))
-  //You must set any value if unused parameters exist
+  //You must set any value even if unused parameters exist
   //println(calculator.calculate(List(500, Double.NaN, 0.12, -18, 30000, 0.00075)))
 
 }
